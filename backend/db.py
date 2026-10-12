@@ -29,6 +29,12 @@ INSERT INTO quotes (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
+# id DESC is used rather than created_at, since two rows saved in the same
+# test (or the same instant) can share an identical timestamp
+SELECT_QUOTES_NEWEST_FIRST = """
+SELECT * FROM quotes ORDER BY id DESC
+"""
+
 
 # Creates the quotes table if it does not already exist
 def init_db(connection):
@@ -55,3 +61,12 @@ def save_quote(connection, data, monthly_price):
     )
     connection.commit()
     return cursor.lastrowid
+
+
+# Returns every saved quote as a list of dicts (one per row), newest first.
+# Built from cursor.description rather than relying on connection.row_factory,
+# since nothing else in this file sets that.
+def list_quotes(connection):
+    cursor = connection.execute(SELECT_QUOTES_NEWEST_FIRST)
+    columns = [description[0] for description in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]

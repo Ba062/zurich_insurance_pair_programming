@@ -4,7 +4,7 @@ import sqlite3
 
 import pytest
 
-from db import init_db, save_quote
+from db import init_db, list_quotes, save_quote
 
 
 @pytest.fixture
@@ -96,3 +96,37 @@ def test_save_quote_multiple_rows_persist(connection):
     cursor = connection.execute("SELECT full_name FROM quotes ORDER BY id")
     names = [row[0] for row in cursor.fetchall()]
     assert names == ["Alice", "Bob"]
+
+
+def test_list_quotes_empty_table_returns_empty_list(connection):
+    assert list_quotes(connection) == []
+
+
+def test_list_quotes_one_quote_returns_every_column(connection):
+    row_id = save_quote(connection, sample_quote(), "84.50")
+
+    rows = list_quotes(connection)
+
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["id"] == row_id
+    assert row["full_name"] == "Jane Doe"
+    assert row["dob"] == "1990-01-01"
+    assert row["email"] == "jane@example.com"
+    assert row["car_make"] == "Toyota"
+    assert row["car_model"] == "Corolla"
+    assert row["car_year"] == 2020
+    assert row["coverage_type"] == "Standard"
+    assert row["monthly_price"] == "84.50"
+    assert row["created_at"]  # non-empty string
+
+
+def test_list_quotes_several_quotes_returns_newest_first(connection):
+    first_id = save_quote(connection, sample_quote(full_name="Alice"), "40.00")
+    second_id = save_quote(connection, sample_quote(full_name="Bob"), "52.00")
+    third_id = save_quote(connection, sample_quote(full_name="Carol"), "60.00")
+
+    rows = list_quotes(connection)
+
+    assert [row["id"] for row in rows] == [third_id, second_id, first_id]
+    assert [row["full_name"] for row in rows] == ["Carol", "Bob", "Alice"]
