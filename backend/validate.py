@@ -12,11 +12,13 @@ QUOTE_RULES = {
     "MAX_NAME_LENGTH": 100,
     "MAX_TEXT_LENGTH": 50,
     "COVERAGES": ["Basic", "Standard", "Premium"],
+    "MAX_NO_CLAIMS_YEARS": 50,
 }
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 DOB_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
 YEAR_RE = re.compile(r"^\d{4}$")
+NO_CLAIMS_YEARS_RE = re.compile(r"^\d+$")
 
 
 # True for anything that is not a string with visible characters
@@ -96,6 +98,27 @@ def validate_coverage_type(value):
     return ""
 
 
+# Optional field: missing or blank is fine (treated as 0 elsewhere). When
+# given, it must be a whole number from 0 to the configured maximum.
+def validate_no_claims_years(value):
+    if value is None or (isinstance(value, str) and value.strip() == ""):
+        return ""
+    text = str(value).strip()
+    max_years = QUOTE_RULES["MAX_NO_CLAIMS_YEARS"]
+    if not NO_CLAIMS_YEARS_RE.match(text) or int(text) > max_years:
+        return f"Enter a whole number of years from 0 to {max_years}."
+    return ""
+
+
+# Turns a raw no_claims_years value into an int, treating missing/blank as 0.
+# Shared by pricing.py and db.py so this rule only lives here. Assumes the
+# value has already passed validate_no_claims_years.
+def normalize_no_claims_years(value):
+    if value is None or (isinstance(value, str) and value.strip() == ""):
+        return 0
+    return int(str(value).strip())
+
+
 # Turn {field: message} into {field: message} with the empty ones removed
 def collect_errors(checks):
     return {field: message for field, message in checks.items() if message}
@@ -118,4 +141,5 @@ def validate_quote(data, today=None):
         ),
         "car_year": validate_year(data.get("car_year"), today),
         "coverage_type": validate_coverage_type(data.get("coverage_type")),
+        "no_claims_years": validate_no_claims_years(data.get("no_claims_years")),
     })

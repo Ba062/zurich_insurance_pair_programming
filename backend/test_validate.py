@@ -8,10 +8,12 @@ from validate import (
     calc_age,
     collect_errors,
     is_blank,
+    normalize_no_claims_years,
     validate_coverage_type,
     validate_dob,
     validate_email,
     validate_name,
+    validate_no_claims_years,
     validate_quote,
     validate_required_text,
     validate_year,
@@ -226,6 +228,77 @@ def test_validate_coverage_type_boundary_each_option():
         assert validate_coverage_type(option) == ""
 
 
+# --- validate_no_claims_years ------------------------------------------------
+
+def test_validate_no_claims_years_missing_is_valid():
+    assert validate_no_claims_years(None) == ""
+
+
+def test_validate_no_claims_years_blank_is_valid():
+    assert validate_no_claims_years("") == ""
+
+
+def test_validate_no_claims_years_valid():
+    assert validate_no_claims_years("4") == ""
+
+
+def test_validate_no_claims_years_boundary_zero():
+    assert validate_no_claims_years("0") == ""
+
+
+def test_validate_no_claims_years_boundary_ten():
+    assert validate_no_claims_years("10") == ""
+
+
+def test_validate_no_claims_years_boundary_eleven():
+    assert validate_no_claims_years("11") == ""
+
+
+def test_validate_no_claims_years_boundary_max():
+    assert validate_no_claims_years(str(QUOTE_RULES["MAX_NO_CLAIMS_YEARS"])) == ""
+
+
+def test_validate_no_claims_years_boundary_above_max():
+    year = QUOTE_RULES["MAX_NO_CLAIMS_YEARS"] + 1
+    assert validate_no_claims_years(str(year)) == (
+        f"Enter a whole number of years from 0 to {QUOTE_RULES['MAX_NO_CLAIMS_YEARS']}."
+    )
+
+
+def test_validate_no_claims_years_negative_invalid():
+    assert validate_no_claims_years("-1") == (
+        f"Enter a whole number of years from 0 to {QUOTE_RULES['MAX_NO_CLAIMS_YEARS']}."
+    )
+
+
+def test_validate_no_claims_years_non_integer_invalid():
+    assert validate_no_claims_years("4.5") == (
+        f"Enter a whole number of years from 0 to {QUOTE_RULES['MAX_NO_CLAIMS_YEARS']}."
+    )
+
+
+# --- normalize_no_claims_years -----------------------------------------------
+
+def test_normalize_no_claims_years_missing_defaults_to_zero():
+    assert normalize_no_claims_years(None) == 0
+
+
+def test_normalize_no_claims_years_blank_defaults_to_zero():
+    assert normalize_no_claims_years("") == 0
+
+
+def test_normalize_no_claims_years_valid_string():
+    assert normalize_no_claims_years("4") == 4
+
+
+def test_normalize_no_claims_years_boundary_zero():
+    assert normalize_no_claims_years("0") == 0
+
+
+def test_normalize_no_claims_years_boundary_max():
+    assert normalize_no_claims_years("50") == 50
+
+
 # --- collect_errors ----------------------------------------------------------
 
 def test_collect_errors_valid_all_empty():
@@ -291,3 +364,16 @@ def test_validate_quote_boundary_values_all_pass():
     payload["car_year"] = str(QUOTE_RULES["MIN_CAR_YEAR"])
     payload["dob"] = f"{TODAY.year - QUOTE_RULES['MIN_AGE']:04d}-{TODAY.month:02d}-{TODAY.day:02d}"
     assert validate_quote(payload, TODAY) == {}
+
+
+def test_validate_quote_boundary_no_claims_years_max_passes():
+    payload = valid_payload()
+    payload["no_claims_years"] = str(QUOTE_RULES["MAX_NO_CLAIMS_YEARS"])
+    assert validate_quote(payload, TODAY) == {}
+
+
+def test_validate_quote_invalid_no_claims_years():
+    payload = valid_payload()
+    payload["no_claims_years"] = str(QUOTE_RULES["MAX_NO_CLAIMS_YEARS"] + 1)
+    errors = validate_quote(payload, TODAY)
+    assert "no_claims_years" in errors
