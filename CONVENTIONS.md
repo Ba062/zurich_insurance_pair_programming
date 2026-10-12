@@ -7,3 +7,5 @@
 - No secrets or keys in the repo
 - Short comments explaining why
 - Do not add features that are not in the spec
+- New optional fields must not break the existing form: a missing value behaves as before
+- Customer details are personal data, so show them only with textContent and use invented demo data
