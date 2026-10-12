@@ -181,7 +181,7 @@ def test_admin_quotes_returns_saved_quote_with_right_fields(running_server):
     assert quote["car_make"] == "Toyota"
     assert quote["car_model"] == "Corolla"
     assert quote["car_year"] == 2015
-    assert quote["coverage_type"] == "standard"
+    assert quote["coverage_type"] == "Standard"
     assert quote["monthly_price"] == monthly_price
     assert quote["suggested_decision"] == "accept"
     assert quote["reasons"] == ["No referral rules triggered"]
