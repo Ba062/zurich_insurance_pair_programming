@@ -137,3 +137,54 @@ def test_root_returns_index_html(running_server):
     assert status == 200
     assert "text/html" in headers.get("Content-Type", "")
     assert b"<html" in body_bytes.lower()
+
+
+def test_saved_quote_includes_suggested_decision_and_reasons(running_server):
+    base_url, db_path = running_server
+
+    # dob 1990-01-01 and car_year 2015 stay inside the accept rules for
+    # the foreseeable future, so this does not trigger any referral rule
+    status, _, _ = request("POST", base_url, "/api/quote", valid_payload())
+    assert status == 200
+
+    connection = sqlite3.connect(db_path)
+    try:
+        row = connection.execute(
+            "SELECT suggested_decision, reasons FROM quotes"
+        ).fetchone()
+    finally:
+        connection.close()
+
+    suggested_decision, reasons_json = row
+    assert suggested_decision == "accept"
+    assert json.loads(reasons_json) == ["No referral rules triggered"]
+
+
+def test_admin_quotes_returns_saved_quote_with_right_fields(running_server):
+    base_url, _ = running_server
+
+    post_status, post_body_bytes, _ = request(
+        "POST", base_url, "/api/quote", valid_payload()
+    )
+    assert post_status == 200
+    monthly_price = json.loads(post_body_bytes)["monthly_price"]
+
+    status, body_bytes, _ = request("GET", base_url, "/api/admin/quotes")
+
+    assert status == 200
+    quotes = json.loads(body_bytes)
+    assert len(quotes) == 1
+
+    quote = quotes[0]
+    assert quote["full_name"] == "Jane Doe"
+    assert quote["email"] == "jane@example.com"
+    assert quote["car_make"] == "Toyota"
+    assert quote["car_model"] == "Corolla"
+    assert quote["car_year"] == 2015
+    assert quote["coverage_type"] == "standard"
+    assert quote["monthly_price"] == monthly_price
+    assert quote["suggested_decision"] == "accept"
+    assert quote["reasons"] == ["No referral rules triggered"]
+    assert quote["status"] == "pending"
+    assert quote["underwriter_note"] is None
+    assert quote["created_at"]
