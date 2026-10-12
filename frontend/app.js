@@ -123,6 +123,7 @@ function init() {
       renderQuote(resultEls, data, price, market);
       showStep(sections, "result");
     } catch (err) {
+      console.error(err);
       serverError.hidden = false;
     } finally {
       submitBtn.disabled = false;

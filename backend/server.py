@@ -6,6 +6,7 @@ the API share one address (localhost:5000), so no CORS is needed.
 
 import json
 import sqlite3
+import traceback
 from datetime import date
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -141,6 +142,7 @@ class QuoteRequestHandler(BaseHTTPRequestHandler):
             save_quote(get_connection(), data, monthly_price)
             self.send_json(200, {"monthly_price": monthly_price})
         except Exception:
+            traceback.print_exc()  # why: shows the real cause in the terminal
             self.send_json(500, {"error": "Internal server error."})
 
     # Only GET and POST are used by this app; every other method is a
