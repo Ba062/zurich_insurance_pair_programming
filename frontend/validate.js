@@ -9,6 +9,27 @@ const QUOTE_RULES = Object.freeze({
   COVERAGES: Object.freeze(["Basic", "Standard", "Premium"]),
 });
 
+// Plan names differ per market, but each one maps onto a server tier
+// (Basic, Standard, Premium), so server validation and pricing stay the same.
+const MARKET_PLANS = Object.freeze({
+  uk: Object.freeze({
+    name: "United Kingdom",
+    plans: Object.freeze({
+      Basic: Object.freeze({ title: "Third-party only", text: "Covers damage to others." }),
+      Standard: Object.freeze({ title: "Third party, fire & theft", text: "Adds theft and fire." }),
+      Premium: Object.freeze({ title: "Comprehensive", text: "Adds your own car's damage." }),
+    }),
+  }),
+  swiss: Object.freeze({
+    name: "Switzerland",
+    plans: Object.freeze({
+      Basic: Object.freeze({ title: "Liability", text: "Covers damage to others." }),
+      Standard: Object.freeze({ title: "Partial casco", text: "Adds theft, fire and natural events." }),
+      Premium: Object.freeze({ title: "Full casco", text: "Adds your own car's damage." }),
+    }),
+  }),
+});
+
 // True for anything that is not a string with visible characters
 function isBlank(value) {
   return typeof value !== "string" || value.trim() === "";
@@ -132,6 +153,32 @@ function isValidPrice(value) {
   return typeof value === "string" && /^\d{1,7}\.\d{2}$/.test(value);
 }
 
+// True only for a market key we have plans for ("uk" or "swiss")
+function isValidMarket(value) {
+  return Object.prototype.hasOwnProperty.call(MARKET_PLANS, value);
+}
+
+function getMarket(market) {
+  if (!isValidMarket(market)) throw new Error(`Unknown market: ${market}`);
+  return MARKET_PLANS[market];
+}
+
+// Plans for a market, keyed by server tier: { Basic: { title, text }, ... }
+function plansForMarket(market) {
+  return getMarket(market).plans;
+}
+
+function marketName(market) {
+  return getMarket(market).name;
+}
+
+// The market's display name for a server tier; falls back to the tier itself
+function coverageLabel(market, coverageType) {
+  const plans = plansForMarket(market);
+  if (!Object.prototype.hasOwnProperty.call(plans, coverageType)) return coverageType;
+  return plans[coverageType].title;
+}
+
 // Lets the same file run in the browser (globals) and in Node (tests)
 if (typeof module !== "undefined") {
   module.exports = {
@@ -150,5 +197,10 @@ if (typeof module !== "undefined") {
     validateCoverage,
     buildPayload,
     isValidPrice,
+    MARKET_PLANS,
+    isValidMarket,
+    plansForMarket,
+    marketName,
+    coverageLabel,
   };
 }

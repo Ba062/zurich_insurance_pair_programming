@@ -51,13 +51,24 @@ async function submitQuote(payload, fetchFn) {
   return body.monthly_price;
 }
 
+// Fill each plan card with the title and text for the chosen market's plans
+function renderPlans(titleEls, textEls, plans) {
+  titleEls.forEach((el) => {
+    el.textContent = plans[el.dataset.planTitle].title;
+  });
+  textEls.forEach((el) => {
+    el.textContent = plans[el.dataset.planText].text;
+  });
+}
+
 // textContent (never innerHTML) so user input cannot inject HTML
-function renderQuote(els, data, price) {
+function renderQuote(els, data, price, market) {
   els.price.textContent = `$${price} / month`;
+  els.market.textContent = quoteChecks.marketName(market);
   els.name.textContent = data.full_name;
   els.email.textContent = data.email;
   els.car.textContent = `${data.car_make} ${data.car_model}, ${data.car_year}`;
-  els.coverage.textContent = data.coverage_type;
+  els.coverage.textContent = quoteChecks.coverageLabel(market, data.coverage_type);
 }
 
 // Wire the page together (browser only)
@@ -67,8 +78,12 @@ function init() {
   const errorEls = Array.from(document.querySelectorAll("[data-field]"));
   const serverError = document.getElementById("server-error");
   const submitBtn = document.getElementById("submit-btn");
+  const planTitleEls = Array.from(document.querySelectorAll("[data-plan-title]"));
+  const planTextEls = Array.from(document.querySelectorAll("[data-plan-text]"));
+  let market = null; // "uk" or "swiss", chosen on the landing screen
   const resultEls = {
     price: document.getElementById("result-price"),
+    market: document.getElementById("result-market"),
     name: document.getElementById("result-name"),
     email: document.getElementById("result-email"),
     car: document.getElementById("result-car"),
@@ -88,6 +103,10 @@ function init() {
       showErrors(errorEls, errors);
       if (Object.keys(errors).length > 0) return;
     }
+    if (button.dataset.market) {
+      market = button.dataset.market;
+      renderPlans(planTitleEls, planTextEls, quoteChecks.plansForMarket(market));
+    }
     showStep(sections, button.dataset.go);
   }
 
@@ -101,7 +120,7 @@ function init() {
     submitBtn.disabled = true; // stops double submits
     try {
       const price = await submitQuote(quoteChecks.buildPayload(data), fetch);
-      renderQuote(resultEls, data, price);
+      renderQuote(resultEls, data, price, market);
       showStep(sections, "result");
     } catch (err) {
       serverError.hidden = false;
@@ -116,6 +135,7 @@ function init() {
   submitBtn.addEventListener("click", handleSubmit);
   document.getElementById("restart-btn").addEventListener("click", () => {
     resetFields(inputs, errorEls);
+    market = null;
     showStep(sections, "landing");
   });
 
@@ -127,5 +147,13 @@ if (typeof document !== "undefined") {
 }
 
 if (typeof module !== "undefined") {
-  module.exports = { showStep, showErrors, readFields, resetFields, submitQuote, renderQuote };
+  module.exports = {
+    showStep,
+    showErrors,
+    readFields,
+    resetFields,
+    submitQuote,
+    renderPlans,
+    renderQuote,
+  };
 }
