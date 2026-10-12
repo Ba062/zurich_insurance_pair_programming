@@ -6,7 +6,7 @@ const QUOTE_RULES = Object.freeze({
   MIN_CAR_YEAR: 1980,
   MAX_NAME_LENGTH: 100,
   MAX_TEXT_LENGTH: 50,
-  MIN_NCD: 0, // no-claims discount, in percent
+  MIN_NCD: 0, // no-claims discount
   MAX_NCD: 50,
   COVERAGES: Object.freeze(["Basic", "Standard", "Premium"]),
 });
