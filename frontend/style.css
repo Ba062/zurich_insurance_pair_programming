@@ -1,0 +1,109 @@
+:root {
+  --blue: #0b3d91;
+  --teal: #00796b;
+  --text: #1b1f2a;
+  --muted: #5b6475;
+  --line: #d5dae3;
+  --error: #b00020;
+}
+
+* { box-sizing: border-box; }
+
+/* Needed so display rules below never override the hidden attribute */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--text);
+  background: #f4f6fa;
+}
+
+.app {
+  width: 100%;
+  max-width: 480px;
+  padding: 32px 24px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(11, 61, 145, 0.1);
+}
+
+.brand {
+  margin: 0 0 24px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+h1 { margin: 0 0 8px; font-size: 1.6rem; color: var(--blue); }
+.muted { margin: 0 0 24px; color: var(--muted); }
+
+/* Progress bar */
+.progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--blue); }
+.p1 { width: 33%; }
+.p2 { width: 66%; }
+.p3 { width: 100%; }
+.step-label { margin: 8px 0 24px; font-size: 0.85rem; color: var(--muted); }
+
+/* Form fields */
+.field { margin-bottom: 16px; }
+label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; }
+
+input[type="text"],
+input[type="email"],
+input[type="date"] {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+input:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+.error { display: block; min-height: 1em; margin-top: 4px; font-size: 0.85rem; color: var(--error); }
+
+/* Coverage cards: the radio is hidden, the body shows the state */
+.plans { display: flex; flex-direction: column; gap: 12px; }
+.plan { margin: 0; cursor: pointer; font-weight: normal; }
+.plan input { position: absolute; opacity: 0; }
+
+.plan-body {
+  display: block;
+  padding: 14px 16px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+}
+
+.plan input:checked + .plan-body { border-color: var(--teal); background: #e6f4f2; }
+.plan input:focus-visible + .plan-body { outline: 2px solid var(--blue); outline-offset: 2px; }
+.plan-title { display: block; font-weight: 700; }
+.plan-text { display: block; font-size: 0.85rem; color: var(--muted); }
+
+/* Buttons */
+.actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 24px; }
+
+.btn {
+  padding: 12px 20px;
+  font: inherit;
+  font-weight: 600;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-primary { margin-left: auto; color: #fff; background: var(--teal); }
+.btn-secondary { color: var(--blue); background: #e8edf7; }
+
+/* Result */
+.price { margin: 8px 0 24px; font-size: 2rem; font-weight: 700; color: var(--teal); }
+.summary { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; }
+.summary dt { color: var(--muted); }
+.summary dd { margin: 0; word-break: break-word; }

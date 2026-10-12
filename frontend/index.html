@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zurich Nova | Car Insurance</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <p class="brand">Zurich Nova</p>
+
+    <!-- Landing -->
+    <section data-step="landing">
+      <h1>Car insurance, made simple.</h1>
+      <p class="muted">Get your quote in under a minute.</p>
+      <button type="button" class="btn btn-primary" data-go="driver">Get a Quote</button>
+    </section>
+
+    <!-- Step 1: Driver -->
+    <section data-step="driver" hidden>
+      <div class="progress" aria-hidden="true"><div class="progress-fill p1"></div></div>
+      <p class="step-label">Step 1 of 3: Driver</p>
+
+      <div class="field">
+        <label for="full_name">Full name</label>
+        <input id="full_name" name="full_name" type="text" maxlength="100" autocomplete="name">
+        <span class="error" data-field="full_name" aria-live="polite"></span>
+      </div>
+
+      <div class="field">
+        <label for="dob">Date of birth</label>
+        <input id="dob" name="dob" type="date" autocomplete="bday">
+        <span class="error" data-field="dob" aria-live="polite"></span>
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" maxlength="254" autocomplete="email">
+        <span class="error" data-field="email" aria-live="polite"></span>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" data-check="driver" data-go="car">Next</button>
+      </div>
+    </section>
+
+    <!-- Step 2: Car -->
+    <section data-step="car" hidden>
+      <div class="progress" aria-hidden="true"><div class="progress-fill p2"></div></div>
+      <p class="step-label">Step 2 of 3: Car</p>
+
+      <div class="field">
+        <label for="car_make">Make</label>
+        <input id="car_make" name="car_make" type="text" maxlength="50">
+        <span class="error" data-field="car_make" aria-live="polite"></span>
+      </div>
+
+      <div class="field">
+        <label for="car_model">Model</label>
+        <input id="car_model" name="car_model" type="text" maxlength="50">
+        <span class="error" data-field="car_model" aria-live="polite"></span>
+      </div>
+
+      <div class="field">
+        <label for="car_year">Year</label>
+        <input id="car_year" name="car_year" type="text" inputmode="numeric" maxlength="4">
+        <span class="error" data-field="car_year" aria-live="polite"></span>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-secondary" data-go="driver">Back</button>
+        <button type="button" class="btn btn-primary" data-check="car" data-go="coverage">Next</button>
+      </div>
+    </section>
+
+    <!-- Step 3: Coverage -->
+    <section data-step="coverage" hidden>
+      <div class="progress" aria-hidden="true"><div class="progress-fill p3"></div></div>
+      <p class="step-label">Step 3 of 3: Coverage</p>
+
+      <div class="plans" role="radiogroup" aria-label="Coverage">
+        <label class="plan">
+          <input type="radio" name="coverage_type" value="Basic">
+          <span class="plan-body">
+            <span class="plan-title">Basic</span>
+            <span class="plan-text">Covers damage to others.</span>
+          </span>
+        </label>
+        <label class="plan">
+          <input type="radio" name="coverage_type" value="Standard">
+          <span class="plan-body">
+            <span class="plan-title">Standard</span>
+            <span class="plan-text">Adds theft and fire.</span>
+          </span>
+        </label>
+        <label class="plan">
+          <input type="radio" name="coverage_type" value="Premium">
+          <span class="plan-body">
+            <span class="plan-title">Premium</span>
+            <span class="plan-text">Adds your own car's damage.</span>
+          </span>
+        </label>
+      </div>
+      <span class="error" data-field="coverage_type" aria-live="polite"></span>
+      <p class="error" id="server-error" role="alert" hidden>Server unavailable. Please try again.</p>
+
+      <div class="actions">
+        <button type="button" class="btn btn-secondary" data-go="car">Back</button>
+        <button type="button" class="btn btn-primary" id="submit-btn">Get Quote</button>
+      </div>
+    </section>
+
+    <!-- Result -->
+    <section data-step="result" hidden>
+      <h1>Your quote</h1>
+      <p class="price" id="result-price"></p>
+      <dl class="summary">
+        <dt>Name</dt><dd id="result-name"></dd>
+        <dt>Email</dt><dd id="result-email"></dd>
+        <dt>Car</dt><dd id="result-car"></dd>
+        <dt>Coverage</dt><dd id="result-coverage"></dd>
+      </dl>
+      <div class="actions">
+        <button type="button" class="btn btn-secondary" id="restart-btn">Start over</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="validate.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
