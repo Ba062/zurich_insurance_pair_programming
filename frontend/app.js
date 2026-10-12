@@ -63,7 +63,7 @@ function renderPlans(titleEls, textEls, plans) {
 
 // textContent (never innerHTML) so user input cannot inject HTML
 function renderQuote(els, data, price, market) {
-  els.price.textContent = `$${price} / month`;
+  els.price.textContent = quoteChecks.formatPrice(market, price);
   els.market.textContent = quoteChecks.marketName(market);
   els.name.textContent = data.full_name;
   els.email.textContent = data.email;

@@ -14,6 +14,7 @@ const QUOTE_RULES = Object.freeze({
 const MARKET_PLANS = Object.freeze({
   uk: Object.freeze({
     name: "United Kingdom",
+    currency: "£",
     plans: Object.freeze({
       Basic: Object.freeze({ title: "Third-party only", text: "Covers damage to others." }),
       Standard: Object.freeze({ title: "Third party, fire & theft", text: "Adds theft and fire." }),
@@ -22,6 +23,7 @@ const MARKET_PLANS = Object.freeze({
   }),
   swiss: Object.freeze({
     name: "Switzerland",
+    currency: "CHF ",
     plans: Object.freeze({
       Basic: Object.freeze({ title: "Liability", text: "Covers damage to others." }),
       Standard: Object.freeze({ title: "Partial casco", text: "Adds theft, fire and natural events." }),
@@ -172,6 +174,12 @@ function marketName(market) {
   return getMarket(market).name;
 }
 
+// Price text with the market's currency, e.g. "£52.00 / month" or "CHF 52.00 / month".
+// The price stays a string; we only add the symbol in front of it.
+function formatPrice(market, price) {
+  return `${getMarket(market).currency}${price} / month`;
+}
+
 // The market's display name for a server tier; falls back to the tier itself
 function coverageLabel(market, coverageType) {
   const plans = plansForMarket(market);
@@ -201,6 +209,7 @@ if (typeof module !== "undefined") {
     isValidMarket,
     plansForMarket,
     marketName,
+    formatPrice,
     coverageLabel,
   };
 }

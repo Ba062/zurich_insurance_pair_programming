@@ -138,6 +138,12 @@ test("marketName", () => {
   assert.throws(() => v.marketName(undefined));
 });
 
+test("formatPrice adds the market's currency", () => {
+  assert.strictEqual(v.formatPrice("uk", "52.00"), "£52.00 / month");
+  assert.strictEqual(v.formatPrice("swiss", "52.00"), "CHF 52.00 / month");
+  assert.throws(() => v.formatPrice("fr", "52.00"));
+});
+
 test("coverageLabel shows the market's plan name for a server tier", () => {
   assert.strictEqual(v.coverageLabel("uk", "Premium"), "Comprehensive");
   assert.strictEqual(v.coverageLabel("swiss", "Basic"), "Liability");

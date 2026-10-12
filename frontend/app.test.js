@@ -93,7 +93,7 @@ test("renderQuote fills the summary with plain text", () => {
     "84.50",
     "uk"
   );
-  assert.strictEqual(els.price.textContent, "$84.50 / month");
+  assert.strictEqual(els.price.textContent, "£84.50 / month");
   assert.strictEqual(els.name.textContent, "<b>Jane</b>"); // kept as text, not HTML
   assert.strictEqual(els.car.textContent, "Toyota Corolla, 2019");
   assert.strictEqual(els.coverage.textContent, "Third party, fire & theft");
