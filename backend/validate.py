@@ -5,6 +5,7 @@ everything at once since the whole payload arrives together."""
 import re
 import unicodedata
 from datetime import date
+from decimal import Decimal, InvalidOperation
 
 QUOTE_RULES = {
     "MIN_AGE": 18,
@@ -13,11 +14,15 @@ QUOTE_RULES = {
     "MAX_NAME_LENGTH": 100,
     "MAX_TEXT_LENGTH": 50,
     "COVERAGES": ["Basic", "Standard", "Premium"],
+    "MAX_NO_CLAIMS_YEARS": 50,
+    "MIN_VEHICLE_VALUE": 500,
+    "MAX_VEHICLE_VALUE": 200000,
 }
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 DOB_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
 YEAR_RE = re.compile(r"^\d{4}$")
+NO_CLAIMS_YEARS_RE = re.compile(r"^\d+$")
 
 
 # True for anything that is not a string with visible characters
@@ -124,6 +129,70 @@ def validate_coverage_type(value):
     return ""
 
 
+# Optional field: missing or blank is fine (treated as 0 elsewhere). When
+# given, it must be a whole number from 0 to the configured maximum.
+def validate_no_claims_years(value):
+    if value is None or (isinstance(value, str) and value.strip() == ""):
+        return ""
+    text = str(value).strip()
+    max_years = QUOTE_RULES["MAX_NO_CLAIMS_YEARS"]
+    if not NO_CLAIMS_YEARS_RE.match(text) or int(text) > max_years:
+        return f"Enter a whole number of years from 0 to {max_years}."
+    return ""
+
+
+# Turns a raw no_claims_years value into an int, treating missing/blank as 0.
+# Shared by pricing.py and db.py so this rule only lives here. Assumes the
+# value has already passed validate_no_claims_years.
+def normalize_no_claims_years(value):
+    if value is None or (isinstance(value, str) and value.strip() == ""):
+        return 0
+    return int(str(value).strip())
+
+
+# Optional field: missing or blank means "not used" (pricing falls back to
+# the flat base price). When given, it must be a finite number from
+# MIN_VEHICLE_VALUE to MAX_VEHICLE_VALUE with at most 2 decimal places.
+# Decimal parsing is used rather than float() so "NaN" and "Infinity" (which
+# Decimal understands as special, non-finite values) are rejected along with
+# anything that is not a plain number.
+def validate_vehicle_value(value):
+    if value is None or (isinstance(value, str) and value.strip() == ""):
+        return ""
+
+    message = (
+        f"Enter a vehicle value from {QUOTE_RULES['MIN_VEHICLE_VALUE']} "
+        f"to {QUOTE_RULES['MAX_VEHICLE_VALUE']} with at most 2 decimals."
+    )
+
+    text = value.strip() if isinstance(value, str) else str(value)
+    try:
+        number = Decimal(text)
+    except (InvalidOperation, ValueError):
+        return message
+
+    if not number.is_finite():  # catches NaN and +/-Infinity
+        return message
+    if number < QUOTE_RULES["MIN_VEHICLE_VALUE"] or number > QUOTE_RULES["MAX_VEHICLE_VALUE"]:
+        return message
+
+    exponent = number.as_tuple().exponent
+    if isinstance(exponent, int) and exponent < -2:
+        return message
+
+    return ""
+
+
+# Turns a raw vehicle_value into a Decimal, or None when missing/blank.
+# Shared by pricing.py and db.py so this rule only lives here. Assumes the
+# value has already passed validate_vehicle_value.
+def normalize_vehicle_value(value):
+    if value is None or (isinstance(value, str) and value.strip() == ""):
+        return None
+    text = value.strip() if isinstance(value, str) else str(value)
+    return Decimal(text)
+
+
 # Turn {field: message} into {field: message} with the empty ones removed
 def collect_errors(checks):
     return {field: message for field, message in checks.items() if message}
@@ -146,4 +215,6 @@ def validate_quote(data, today=None):
         ),
         "car_year": validate_year(data.get("car_year"), today),
         "coverage_type": validate_coverage_type(data.get("coverage_type")),
+        "no_claims_years": validate_no_claims_years(data.get("no_claims_years")),
+        "vehicle_value": validate_vehicle_value(data.get("vehicle_value")),
     })

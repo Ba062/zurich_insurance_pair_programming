@@ -2,6 +2,7 @@
 boundary values for each function, mirroring the rules in validate.py."""
 
 from datetime import date
+from decimal import Decimal
 
 from validate import (
     QUOTE_RULES,
@@ -9,12 +10,16 @@ from validate import (
     collect_errors,
     has_valid_name_shape,
     is_blank,
+    normalize_no_claims_years,
+    normalize_vehicle_value,
     validate_coverage_type,
     validate_dob,
     validate_email,
     validate_name,
+    validate_no_claims_years,
     validate_quote,
     validate_required_text,
+    validate_vehicle_value,
     validate_year,
 )
 
@@ -272,6 +277,153 @@ def test_validate_coverage_type_boundary_each_option():
         assert validate_coverage_type(option) == ""
 
 
+# --- validate_no_claims_years ------------------------------------------------
+
+def test_validate_no_claims_years_missing_is_valid():
+    assert validate_no_claims_years(None) == ""
+
+
+def test_validate_no_claims_years_blank_is_valid():
+    assert validate_no_claims_years("") == ""
+
+
+def test_validate_no_claims_years_valid():
+    assert validate_no_claims_years("4") == ""
+
+
+def test_validate_no_claims_years_boundary_zero():
+    assert validate_no_claims_years("0") == ""
+
+
+def test_validate_no_claims_years_boundary_ten():
+    assert validate_no_claims_years("10") == ""
+
+
+def test_validate_no_claims_years_boundary_eleven():
+    assert validate_no_claims_years("11") == ""
+
+
+def test_validate_no_claims_years_boundary_max():
+    assert validate_no_claims_years(str(QUOTE_RULES["MAX_NO_CLAIMS_YEARS"])) == ""
+
+
+def test_validate_no_claims_years_boundary_above_max():
+    year = QUOTE_RULES["MAX_NO_CLAIMS_YEARS"] + 1
+    assert validate_no_claims_years(str(year)) == (
+        f"Enter a whole number of years from 0 to {QUOTE_RULES['MAX_NO_CLAIMS_YEARS']}."
+    )
+
+
+def test_validate_no_claims_years_negative_invalid():
+    assert validate_no_claims_years("-1") == (
+        f"Enter a whole number of years from 0 to {QUOTE_RULES['MAX_NO_CLAIMS_YEARS']}."
+    )
+
+
+def test_validate_no_claims_years_non_integer_invalid():
+    assert validate_no_claims_years("4.5") == (
+        f"Enter a whole number of years from 0 to {QUOTE_RULES['MAX_NO_CLAIMS_YEARS']}."
+    )
+
+
+# --- normalize_no_claims_years -----------------------------------------------
+
+def test_normalize_no_claims_years_missing_defaults_to_zero():
+    assert normalize_no_claims_years(None) == 0
+
+
+def test_normalize_no_claims_years_blank_defaults_to_zero():
+    assert normalize_no_claims_years("") == 0
+
+
+def test_normalize_no_claims_years_valid_string():
+    assert normalize_no_claims_years("4") == 4
+
+
+def test_normalize_no_claims_years_boundary_zero():
+    assert normalize_no_claims_years("0") == 0
+
+
+def test_normalize_no_claims_years_boundary_max():
+    assert normalize_no_claims_years("50") == 50
+
+
+# --- validate_vehicle_value --------------------------------------------------
+
+def test_validate_vehicle_value_missing_is_valid():
+    assert validate_vehicle_value(None) == ""
+
+
+def test_validate_vehicle_value_blank_is_valid():
+    assert validate_vehicle_value("") == ""
+
+
+def test_validate_vehicle_value_valid():
+    assert validate_vehicle_value("12000") == ""
+
+
+def test_validate_vehicle_value_valid_number_type():
+    assert validate_vehicle_value(12000) == ""
+    assert validate_vehicle_value(12000.5) == ""
+
+
+def test_validate_vehicle_value_boundary_min():
+    assert validate_vehicle_value(str(QUOTE_RULES["MIN_VEHICLE_VALUE"])) == ""
+
+
+def test_validate_vehicle_value_boundary_below_min():
+    value = QUOTE_RULES["MIN_VEHICLE_VALUE"] - Decimal("0.01")
+    assert validate_vehicle_value(str(value)) != ""
+
+
+def test_validate_vehicle_value_boundary_max():
+    assert validate_vehicle_value(str(QUOTE_RULES["MAX_VEHICLE_VALUE"])) == ""
+
+
+def test_validate_vehicle_value_boundary_above_max():
+    value = QUOTE_RULES["MAX_VEHICLE_VALUE"] + 0.01
+    assert validate_vehicle_value(str(value)) != ""
+
+
+def test_validate_vehicle_value_boundary_two_decimals():
+    assert validate_vehicle_value("12000.12") == ""
+
+
+def test_validate_vehicle_value_boundary_three_decimals_invalid():
+    assert validate_vehicle_value("12000.123") != ""
+
+
+def test_validate_vehicle_value_rejects_nan():
+    assert validate_vehicle_value("NaN") != ""
+
+
+def test_validate_vehicle_value_rejects_infinity():
+    assert validate_vehicle_value("Infinity") != ""
+    assert validate_vehicle_value("-Infinity") != ""
+
+
+def test_validate_vehicle_value_rejects_non_numeric():
+    assert validate_vehicle_value("abc") != ""
+
+
+# --- normalize_vehicle_value --------------------------------------------------
+
+def test_normalize_vehicle_value_missing_returns_none():
+    assert normalize_vehicle_value(None) is None
+
+
+def test_normalize_vehicle_value_blank_returns_none():
+    assert normalize_vehicle_value("") is None
+
+
+def test_normalize_vehicle_value_valid_string():
+    assert normalize_vehicle_value("12000") == Decimal("12000")
+
+
+def test_normalize_vehicle_value_valid_number_type():
+    assert normalize_vehicle_value(12000) == Decimal("12000")
+
+
 # --- collect_errors ----------------------------------------------------------
 
 def test_collect_errors_valid_all_empty():
@@ -353,3 +505,29 @@ def test_validate_quote_boundary_values_all_pass():
     payload["car_year"] = str(QUOTE_RULES["MIN_CAR_YEAR"])
     payload["dob"] = f"{TODAY.year - QUOTE_RULES['MIN_AGE']:04d}-{TODAY.month:02d}-{TODAY.day:02d}"
     assert validate_quote(payload, TODAY) == {}
+
+
+def test_validate_quote_boundary_no_claims_years_max_passes():
+    payload = valid_payload()
+    payload["no_claims_years"] = str(QUOTE_RULES["MAX_NO_CLAIMS_YEARS"])
+    assert validate_quote(payload, TODAY) == {}
+
+
+def test_validate_quote_invalid_no_claims_years():
+    payload = valid_payload()
+    payload["no_claims_years"] = str(QUOTE_RULES["MAX_NO_CLAIMS_YEARS"] + 1)
+    errors = validate_quote(payload, TODAY)
+    assert "no_claims_years" in errors
+
+
+def test_validate_quote_boundary_vehicle_value_passes():
+    payload = valid_payload()
+    payload["vehicle_value"] = "12000"
+    assert validate_quote(payload, TODAY) == {}
+
+
+def test_validate_quote_invalid_vehicle_value():
+    payload = valid_payload()
+    payload["vehicle_value"] = str(QUOTE_RULES["MAX_VEHICLE_VALUE"] + 1)
+    errors = validate_quote(payload, TODAY)
+    assert "vehicle_value" in errors

@@ -12,8 +12,9 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
-from db import init_db, save_quote
-from pricing import calculate_monthly_price
+from db import init_db, list_quotes, save_quote
+from pricing import price_breakdown
+from underwriting import assess_risk
 from validate import validate_quote
 
 HOST = "localhost"
@@ -86,6 +87,10 @@ class QuoteRequestHandler(BaseHTTPRequestHandler):
             self.send_method_not_allowed()
             return
 
+        if path == "/api/admin/quotes":
+            self.handle_admin_quotes()
+            return
+
         file_path = resolve_static_path(path)
         if file_path is None:
             self.send_json(404, {"error": "Not found."})
@@ -106,16 +111,21 @@ class QuoteRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         path = urlparse(self.path).path
 
-        if path != "/api/quote":
-            # A known static file hit with POST is a wrong method; anything
-            # else is simply not a route we have
-            if resolve_static_path(path) is not None:
-                self.send_method_not_allowed()
-            else:
-                self.send_json(404, {"error": "Not found."})
+        if path == "/api/quote":
+            self.handle_quote()
             return
 
-        self.handle_quote()
+        if path == "/api/admin/quotes":
+            # GET-only route; POST here is a known path, wrong method
+            self.send_method_not_allowed()
+            return
+
+        # A known static file hit with POST is a wrong method; anything
+        # else is simply not a route we have
+        if resolve_static_path(path) is not None:
+            self.send_method_not_allowed()
+        else:
+            self.send_json(404, {"error": "Not found."})
 
     def handle_quote(self):
         try:
@@ -138,9 +148,26 @@ class QuoteRequestHandler(BaseHTTPRequestHandler):
                 return
 
             today = date.today()
-            monthly_price = calculate_monthly_price(data, today)
-            save_quote(get_connection(), data, monthly_price)
-            self.send_json(200, {"monthly_price": monthly_price})
+            breakdown = price_breakdown(data, today)
+            monthly_price = breakdown[-1]["amount"]
+            risk = assess_risk(data, today)
+            save_quote(
+                get_connection(),
+                data,
+                monthly_price,
+                risk["decision"],
+                risk["reasons"],
+            )
+            # Customer response is unchanged apart from the new breakdown:
+            # the risk assessment is for the admin view only
+            self.send_json(200, {"monthly_price": monthly_price, "breakdown": breakdown})
+        except Exception:
+            self.send_json(500, {"error": "Internal server error."})
+
+    def handle_admin_quotes(self):
+        try:
+            quotes = list_quotes(get_connection())
+            self.send_json(200, quotes)
         except Exception:
             traceback.print_exc()  # why: shows the real cause in the terminal
             self.send_json(500, {"error": "Internal server error."})

@@ -140,6 +140,78 @@ def test_save_quote_stores_suggested_decision_and_reasons(connection):
     assert reasons_json == '["Driver is under 21.", "Car is more than 20 years old."]'
 
 
+def test_save_quote_defaults_no_claims_years_to_zero_when_missing(connection):
+    row_id = save_quote(connection, sample_quote(), "40.00")
+    cursor = connection.execute(
+        "SELECT no_claims_years FROM quotes WHERE id = ?", (row_id,)
+    )
+    assert cursor.fetchone()[0] == 0
+
+
+def test_save_quote_stores_no_claims_years(connection):
+    row_id = save_quote(connection, sample_quote(no_claims_years="4"), "40.00")
+    cursor = connection.execute(
+        "SELECT no_claims_years FROM quotes WHERE id = ?", (row_id,)
+    )
+    assert cursor.fetchone()[0] == 4
+
+
+def test_save_quote_boundary_no_claims_years_zero(connection):
+    row_id = save_quote(connection, sample_quote(no_claims_years="0"), "40.00")
+    cursor = connection.execute(
+        "SELECT no_claims_years FROM quotes WHERE id = ?", (row_id,)
+    )
+    assert cursor.fetchone()[0] == 0
+
+
+def test_save_quote_boundary_no_claims_years_ten(connection):
+    row_id = save_quote(connection, sample_quote(no_claims_years="10"), "40.00")
+    cursor = connection.execute(
+        "SELECT no_claims_years FROM quotes WHERE id = ?", (row_id,)
+    )
+    assert cursor.fetchone()[0] == 10
+
+
+def test_save_quote_boundary_no_claims_years_eleven(connection):
+    row_id = save_quote(connection, sample_quote(no_claims_years="11"), "40.00")
+    cursor = connection.execute(
+        "SELECT no_claims_years FROM quotes WHERE id = ?", (row_id,)
+    )
+    assert cursor.fetchone()[0] == 11
+
+
+def test_save_quote_boundary_no_claims_years_fifty(connection):
+    row_id = save_quote(connection, sample_quote(no_claims_years="50"), "40.00")
+    cursor = connection.execute(
+        "SELECT no_claims_years FROM quotes WHERE id = ?", (row_id,)
+    )
+    assert cursor.fetchone()[0] == 50
+
+
+def test_save_quote_defaults_vehicle_value_to_null_when_missing(connection):
+    row_id = save_quote(connection, sample_quote(), "40.00")
+    cursor = connection.execute(
+        "SELECT vehicle_value FROM quotes WHERE id = ?", (row_id,)
+    )
+    assert cursor.fetchone()[0] is None
+
+
+def test_save_quote_stores_vehicle_value_as_text(connection):
+    row_id = save_quote(connection, sample_quote(vehicle_value="12000"), "30.00")
+    cursor = connection.execute(
+        "SELECT vehicle_value FROM quotes WHERE id = ?", (row_id,)
+    )
+    assert cursor.fetchone()[0] == "12000"
+
+
+def test_save_quote_stores_vehicle_value_with_decimals(connection):
+    row_id = save_quote(connection, sample_quote(vehicle_value="12000.50"), "30.01")
+    cursor = connection.execute(
+        "SELECT vehicle_value FROM quotes WHERE id = ?", (row_id,)
+    )
+    assert cursor.fetchone()[0] == "12000.50"
+
+
 def test_list_quotes_empty_table_returns_empty_list(connection):
     assert list_quotes(connection) == []
 
@@ -164,12 +236,22 @@ def test_list_quotes_one_quote_returns_every_column(connection):
     assert row["car_make"] == "Toyota"
     assert row["car_model"] == "Corolla"
     assert row["car_year"] == 2020
+    assert row["vehicle_value"] is None
     assert row["coverage_type"] == "Standard"
+    assert row["no_claims_years"] == 0
     assert row["monthly_price"] == "84.50"
     assert row["suggested_decision"] == "accept"
     assert row["status"] == "pending"
     assert row["underwriter_note"] is None
     assert row["created_at"]  # non-empty string
+
+
+def test_list_quotes_includes_vehicle_value_when_given(connection):
+    save_quote(connection, sample_quote(vehicle_value="12000"), "30.00")
+
+    rows = list_quotes(connection)
+
+    assert rows[0]["vehicle_value"] == "12000"
 
 
 def test_list_quotes_decodes_reasons_as_list(connection):
