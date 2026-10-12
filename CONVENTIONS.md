@@ -1,0 +1,9 @@
+- Plain code, no frameworks or extra packages unless the README says so
+- Small functions, one job each
+- Validate all input, escape user input shown in HTML
+- Use Decimal for money
+- Rules live in one place, behaviour is predictable
+- A test for each function
+- No secrets or keys in the repo
+- Short comments explaining why
+- Do not add features that are not in the spec
