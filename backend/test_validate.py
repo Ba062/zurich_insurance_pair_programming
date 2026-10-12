@@ -8,6 +8,7 @@ from validate import (
     QUOTE_RULES,
     calc_age,
     collect_errors,
+    has_valid_name_shape,
     is_blank,
     normalize_no_claims_years,
     normalize_vehicle_value,
@@ -92,6 +93,51 @@ def test_validate_name_too_long():
 def test_validate_name_boundary_max_length():
     name = "a" * QUOTE_RULES["MAX_NAME_LENGTH"]
     assert validate_name(name) == ""
+
+
+NAME_SHAPE_ERROR = "Name can only contain letters, spaces, hyphens and apostrophes."
+
+
+def test_validate_name_allows_separators_and_accents():
+    assert validate_name("Anne-Marie O'Brien") == ""
+    assert validate_name("Fran\u00e7ois M\u00fcller") == ""
+    assert validate_name("O\u2019Brien") == ""  # curly apostrophe
+    assert validate_name("  Jane Doe  ") == ""  # trimmed before checking
+
+
+def test_validate_name_rejects_digits_and_symbols():
+    assert validate_name("Jane123") == NAME_SHAPE_ERROR
+    assert validate_name("Jane@Doe") == NAME_SHAPE_ERROR
+    assert validate_name("<b>Jane</b>") == NAME_SHAPE_ERROR
+    assert validate_name("123") == NAME_SHAPE_ERROR
+
+
+def test_validate_name_rejects_bad_separators():
+    assert validate_name("Jane  Doe") == NAME_SHAPE_ERROR  # doubled space
+    assert validate_name("-Jane") == NAME_SHAPE_ERROR  # leading
+    assert validate_name("Jane-") == NAME_SHAPE_ERROR  # trailing
+    assert validate_name("Jane--Doe") == NAME_SHAPE_ERROR
+
+
+# --- has_valid_name_shape ---------------------------------------------------
+
+def test_has_valid_name_shape_valid():
+    assert has_valid_name_shape("Jane Doe") is True
+    assert has_valid_name_shape("Anne-Marie") is True
+
+
+def test_has_valid_name_shape_blank():
+    assert has_valid_name_shape("") is False
+
+
+def test_has_valid_name_shape_invalid_characters():
+    assert has_valid_name_shape("Jane1") is False
+    assert has_valid_name_shape("Jane_Doe") is False
+
+
+def test_has_valid_name_shape_boundary_single_letter():
+    assert has_valid_name_shape("a") is True
+    assert has_valid_name_shape("-") is False
 
 
 # --- validate_dob ---------------------------------------------------------
@@ -425,6 +471,22 @@ def test_validate_quote_blank():
         "car_model",
         "car_year",
         "coverage_type",
+    }
+
+
+def test_validate_quote_blank_car_brand_uses_car_brand_label():
+    payload = valid_payload()
+    payload["car_make"] = ""
+    errors = validate_quote(payload, TODAY)
+    assert errors == {"car_make": "Car Brand is required."}
+
+
+def test_validate_quote_rejects_digits_in_name():
+    payload = valid_payload()
+    payload["full_name"] = "Jane123"
+    errors = validate_quote(payload, TODAY)
+    assert errors == {
+        "full_name": "Name can only contain letters, spaces, hyphens and apostrophes."
     }
 
 

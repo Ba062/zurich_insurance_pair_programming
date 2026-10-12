@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert");
 const app = require("./app.js");
+const checks = require("./validate.js");
 
 // init() only wires events in the browser, so it is checked by hand.
 
@@ -73,6 +74,7 @@ test("submitQuote rejects on an invalid price", async () => {
 test("renderQuote fills the summary with plain text", () => {
   const els = {
     price: {},
+    market: {},
     name: {},
     email: {},
     car: {},
@@ -88,10 +90,24 @@ test("renderQuote fills the summary with plain text", () => {
       car_year: "2019",
       coverage_type: "Standard",
     },
-    "84.50"
+    "84.50",
+    "uk"
   );
-  assert.strictEqual(els.price.textContent, "$84.50 / month");
+  assert.strictEqual(els.price.textContent, "£84.50 / month");
   assert.strictEqual(els.name.textContent, "<b>Jane</b>"); // kept as text, not HTML
   assert.strictEqual(els.car.textContent, "Toyota Corolla, 2019");
-  assert.strictEqual(els.coverage.textContent, "Standard");
+  assert.strictEqual(els.coverage.textContent, "Third party, fire & theft");
+  assert.strictEqual(els.market.textContent, "United Kingdom");
+});
+
+test("renderPlans fills titles and texts for the chosen market", () => {
+  const titleEls = [
+    { dataset: { planTitle: "Basic" }, textContent: "" },
+    { dataset: { planTitle: "Premium" }, textContent: "" },
+  ];
+  const textEls = [{ dataset: { planText: "Standard" }, textContent: "" }];
+  app.renderPlans(titleEls, textEls, checks.plansForMarket("swiss"));
+  assert.strictEqual(titleEls[0].textContent, "Liability");
+  assert.strictEqual(titleEls[1].textContent, "Full casco");
+  assert.strictEqual(textEls[0].textContent, "Adds theft, fire and natural events.");
 });

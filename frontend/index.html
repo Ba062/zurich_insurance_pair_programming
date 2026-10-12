@@ -14,7 +14,11 @@
     <section data-step="landing">
       <h1>Car insurance, made simple.</h1>
       <p class="muted">Get your quote in under a minute.</p>
-      <button type="button" class="btn btn-primary" data-go="driver">Get a Quote</button>
+      <p class="market-label">Choose your market</p>
+      <div class="markets">
+        <button type="button" class="btn btn-primary" data-market="uk" data-go="driver">United Kingdom</button>
+        <button type="button" class="btn btn-primary" data-market="swiss" data-go="driver">Switzerland</button>
+      </div>
     </section>
 
     <!-- Step 1: Driver -->
@@ -51,7 +55,7 @@
       <p class="step-label">Step 2 of 3: Car</p>
 
       <div class="field">
-        <label for="car_make">Make</label>
+        <label for="car_make">Car Brand</label>
         <input id="car_make" name="car_make" type="text" maxlength="50">
         <span class="error" data-field="car_make" aria-live="polite"></span>
       </div>
@@ -83,22 +87,22 @@
         <label class="plan">
           <input type="radio" name="coverage_type" value="Basic">
           <span class="plan-body">
-            <span class="plan-title">Basic</span>
-            <span class="plan-text">Covers damage to others.</span>
+            <span class="plan-title" data-plan-title="Basic"></span>
+            <span class="plan-text" data-plan-text="Basic"></span>
           </span>
         </label>
         <label class="plan">
           <input type="radio" name="coverage_type" value="Standard">
           <span class="plan-body">
-            <span class="plan-title">Standard</span>
-            <span class="plan-text">Adds theft and fire.</span>
+            <span class="plan-title" data-plan-title="Standard"></span>
+            <span class="plan-text" data-plan-text="Standard"></span>
           </span>
         </label>
         <label class="plan">
           <input type="radio" name="coverage_type" value="Premium">
           <span class="plan-body">
-            <span class="plan-title">Premium</span>
-            <span class="plan-text">Adds your own car's damage.</span>
+            <span class="plan-title" data-plan-title="Premium"></span>
+            <span class="plan-text" data-plan-text="Premium"></span>
           </span>
         </label>
       </div>
@@ -116,6 +120,7 @@
       <h1>Your quote</h1>
       <p class="price" id="result-price"></p>
       <dl class="summary">
+        <dt>Market</dt><dd id="result-market"></dd>
         <dt>Name</dt><dd id="result-name"></dd>
         <dt>Email</dt><dd id="result-email"></dd>
         <dt>Car</dt><dd id="result-car"></dd>

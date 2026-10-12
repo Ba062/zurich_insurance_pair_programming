@@ -45,7 +45,7 @@ def valid_payload(**overrides):
         "car_make": "Toyota",
         "car_model": "Corolla",
         "car_year": 2015,
-        "coverage_type": "standard",
+        "coverage_type": "Standard",
     }
     payload.update(overrides)
     return payload

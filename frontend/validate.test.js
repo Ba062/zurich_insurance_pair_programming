@@ -22,8 +22,19 @@ test("calcAge", () => {
 
 test("validateName", () => {
   assert.strictEqual(v.validateName("Jane Doe"), "");
+  assert.strictEqual(v.validateName("  Jane Doe  "), ""); // trimmed before checking
+  assert.strictEqual(v.validateName("Anne-Marie O'Brien"), "");
+  assert.strictEqual(v.validateName("François Müller"), "");
   assert.notStrictEqual(v.validateName(""), "");
   assert.notStrictEqual(v.validateName("a".repeat(101)), "");
+  assert.strictEqual(v.validateName("a".repeat(100)), ""); // boundary
+  assert.notStrictEqual(v.validateName("Jane123"), ""); // digits
+  assert.notStrictEqual(v.validateName("Jane@Doe"), ""); // special characters
+  assert.notStrictEqual(v.validateName("<b>Jane</b>"), ""); // markup
+  assert.notStrictEqual(v.validateName("Jane  Doe"), ""); // doubled space
+  assert.notStrictEqual(v.validateName("-Jane"), ""); // leading separator
+  assert.notStrictEqual(v.validateName("Jane-"), ""); // trailing separator
+  assert.notStrictEqual(v.validateName("123"), "");
 });
 
 test("validateDob", () => {
@@ -106,4 +117,47 @@ test("isValidPrice", () => {
   assert.strictEqual(v.isValidPrice(84.5), false);
   assert.strictEqual(v.isValidPrice("-1.00"), false);
   assert.strictEqual(v.isValidPrice(undefined), false);
+});
+
+test("isValidMarket", () => {
+  assert.strictEqual(v.isValidMarket("uk"), true);
+  assert.strictEqual(v.isValidMarket("swiss"), true);
+  assert.strictEqual(v.isValidMarket("fr"), false);
+  assert.strictEqual(v.isValidMarket("constructor"), false);
+  assert.strictEqual(v.isValidMarket(undefined), false);
+});
+
+test("plansForMarket maps each market's names onto the three server tiers", () => {
+  const uk = v.plansForMarket("uk");
+  assert.deepStrictEqual(Object.keys(uk), Array.from(v.QUOTE_RULES.COVERAGES));
+  assert.strictEqual(uk.Basic.title, "Third-party only");
+  assert.strictEqual(uk.Standard.title, "Third party, fire & theft");
+  assert.strictEqual(uk.Premium.title, "Comprehensive");
+
+  const swiss = v.plansForMarket("swiss");
+  assert.deepStrictEqual(Object.keys(swiss), Array.from(v.QUOTE_RULES.COVERAGES));
+  assert.strictEqual(swiss.Basic.title, "Liability");
+  assert.strictEqual(swiss.Standard.title, "Partial casco");
+  assert.strictEqual(swiss.Premium.title, "Full casco");
+
+  assert.throws(() => v.plansForMarket("fr"));
+});
+
+test("marketName", () => {
+  assert.strictEqual(v.marketName("uk"), "United Kingdom");
+  assert.strictEqual(v.marketName("swiss"), "Switzerland");
+  assert.throws(() => v.marketName(undefined));
+});
+
+test("formatPrice adds the market's currency", () => {
+  assert.strictEqual(v.formatPrice("uk", "52.00"), "£52.00 / month");
+  assert.strictEqual(v.formatPrice("swiss", "52.00"), "CHF 52.00 / month");
+  assert.throws(() => v.formatPrice("fr", "52.00"));
+});
+
+test("coverageLabel shows the market's plan name for a server tier", () => {
+  assert.strictEqual(v.coverageLabel("uk", "Premium"), "Comprehensive");
+  assert.strictEqual(v.coverageLabel("swiss", "Basic"), "Liability");
+  assert.strictEqual(v.coverageLabel("swiss", "Gold"), "Gold"); // unknown tier falls back
+  assert.strictEqual(v.coverageLabel("uk", "constructor"), "constructor");
 });

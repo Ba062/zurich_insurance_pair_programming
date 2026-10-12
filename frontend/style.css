@@ -43,6 +43,11 @@ body {
 h1 { margin: 0 0 8px; font-size: 1.6rem; color: var(--blue); }
 .muted { margin: 0 0 24px; color: var(--muted); }
 
+/* Market choice on the landing screen */
+.market-label { margin: 0 0 12px; font-size: 0.9rem; font-weight: 600; }
+.markets { display: flex; gap: 12px; }
+.markets .btn { flex: 1; margin-left: 0; }
+
 /* Progress bar */
 .progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
 .progress-fill { height: 100%; background: var(--blue); }

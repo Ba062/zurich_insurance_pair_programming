@@ -3,6 +3,7 @@ The frontend checks these per step for fast feedback; here we check
 everything at once since the whole payload arrives together."""
 
 import re
+import unicodedata
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
@@ -47,12 +48,39 @@ def calc_age(dob, today):
     return age if had_birthday else age - 1
 
 
+# Names may be split into letter groups by one of these (e.g. "Anne-Marie O'Brien")
+NAME_SEPARATORS = " '’-"
+
+
+# Unicode letters and combining marks, so accented names like "Müller" pass
+def is_name_char(char):
+    return unicodedata.category(char)[0] in ("L", "M")
+
+
+# Mirrors NAME_RE in frontend/validate.js: letters in groups split by single
+# separators, with no leading, trailing or doubled separator
+def has_valid_name_shape(text):
+    previous_was_separator = True  # starting this way rejects a leading separator
+    for char in text:
+        if char in NAME_SEPARATORS:
+            if previous_was_separator:
+                return False
+            previous_was_separator = True
+        elif is_name_char(char):
+            previous_was_separator = False
+        else:
+            return False
+    return not previous_was_separator  # also rejects a trailing separator
+
+
 # Each field validator returns an error message, or "" when the value is fine
 def validate_name(value):
     if is_blank(value):
         return "Full name is required."
     if len(value.strip()) > QUOTE_RULES["MAX_NAME_LENGTH"]:
         return "Name is too long."
+    if not has_valid_name_shape(value.strip()):
+        return "Name can only contain letters, spaces, hyphens and apostrophes."
     return ""
 
 
@@ -180,7 +208,7 @@ def validate_quote(data, today=None):
         "dob": validate_dob(data.get("dob"), today),
         "email": validate_email(data.get("email")),
         "car_make": validate_required_text(
-            "Make", data.get("car_make"), QUOTE_RULES["MAX_TEXT_LENGTH"]
+            "Car Brand", data.get("car_make"), QUOTE_RULES["MAX_TEXT_LENGTH"]
         ),
         "car_model": validate_required_text(
             "Model", data.get("car_model"), QUOTE_RULES["MAX_TEXT_LENGTH"]
