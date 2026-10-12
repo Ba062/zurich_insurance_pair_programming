@@ -188,3 +188,30 @@ def test_admin_quotes_returns_saved_quote_with_right_fields(running_server):
     assert quote["status"] == "pending"
     assert quote["underwriter_note"] is None
     assert quote["created_at"]
+
+
+def test_valid_quote_response_includes_breakdown_matching_monthly_price(running_server):
+    base_url, _ = running_server
+
+    status, body_bytes, _ = request("POST", base_url, "/api/quote", valid_payload())
+
+    assert status == 200
+    body = json.loads(body_bytes)
+    assert "breakdown" in body
+    assert isinstance(body["breakdown"], list)
+    assert len(body["breakdown"]) == 6
+    for step in body["breakdown"]:
+        assert set(step.keys()) == {"label", "amount"}
+        assert PRICE_PATTERN.match(step["amount"])
+    assert body["breakdown"][-1]["amount"] == body["monthly_price"]
+
+
+def test_valid_quote_with_vehicle_value_uses_it_for_base_price(running_server):
+    base_url, _ = running_server
+
+    payload = valid_payload(vehicle_value="12000")
+    status, body_bytes, _ = request("POST", base_url, "/api/quote", payload)
+
+    assert status == 200
+    body = json.loads(body_bytes)
+    assert body["breakdown"][0] == {"label": "Base price", "amount": "30.00"}

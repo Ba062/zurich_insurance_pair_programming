@@ -8,7 +8,7 @@ import json
 import sqlite3
 from datetime import datetime, timezone
 
-from validate import normalize_no_claims_years
+from validate import normalize_no_claims_years, normalize_vehicle_value
 
 CREATE_QUOTES_TABLE = """
 CREATE TABLE IF NOT EXISTS quotes (
@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS quotes (
     car_make TEXT NOT NULL,
     car_model TEXT NOT NULL,
     car_year INTEGER NOT NULL,
+    vehicle_value TEXT,
     coverage_type TEXT NOT NULL,
     no_claims_years INTEGER NOT NULL DEFAULT 0,
     monthly_price TEXT NOT NULL,
@@ -32,10 +33,10 @@ CREATE TABLE IF NOT EXISTS quotes (
 
 INSERT_QUOTE = """
 INSERT INTO quotes (
-    full_name, dob, email, car_make, car_model, car_year,
+    full_name, dob, email, car_make, car_model, car_year, vehicle_value,
     coverage_type, no_claims_years, monthly_price, suggested_decision, reasons,
     status, underwriter_note, created_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 UPDATE_DECISION = """
@@ -60,12 +61,15 @@ def init_db(connection):
 # Inserts one quote row; created_at and status are set here, not by the
 # caller. suggested_decision/reasons come from underwriting.assess_risk,
 # but are optional so callers that have not run that check yet still work.
-# no_claims_years defaults to 0 when missing, via the same rule validate.py
-# uses when checking the field.
+# no_claims_years defaults to 0, and vehicle_value is stored as text (or
+# NULL when missing), both using the same rules validate.py uses when
+# checking those fields.
 def save_quote(connection, data, monthly_price, suggested_decision=None, reasons=None):
     created_at = datetime.now(timezone.utc).isoformat()
     reasons_json = json.dumps(reasons or [])
     no_claims_years = normalize_no_claims_years(data.get("no_claims_years"))
+    vehicle_value = normalize_vehicle_value(data.get("vehicle_value"))
+    vehicle_value_text = str(vehicle_value) if vehicle_value is not None else None
     cursor = connection.execute(
         INSERT_QUOTE,
         (
@@ -75,6 +79,7 @@ def save_quote(connection, data, monthly_price, suggested_decision=None, reasons
             data["car_make"],
             data["car_model"],
             int(data["car_year"]),
+            vehicle_value_text,
             data["coverage_type"],
             no_claims_years,
             monthly_price,

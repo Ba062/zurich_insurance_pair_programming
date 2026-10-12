@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from db import init_db, list_quotes, save_quote
-from pricing import calculate_monthly_price
+from pricing import price_breakdown
 from underwriting import assess_risk
 from validate import validate_quote
 
@@ -147,7 +147,8 @@ class QuoteRequestHandler(BaseHTTPRequestHandler):
                 return
 
             today = date.today()
-            monthly_price = calculate_monthly_price(data, today)
+            breakdown = price_breakdown(data, today)
+            monthly_price = breakdown[-1]["amount"]
             risk = assess_risk(data, today)
             save_quote(
                 get_connection(),
@@ -156,9 +157,9 @@ class QuoteRequestHandler(BaseHTTPRequestHandler):
                 risk["decision"],
                 risk["reasons"],
             )
-            # Customer response is unchanged: the risk assessment is for
-            # the admin view only, not shown to the person getting a quote
-            self.send_json(200, {"monthly_price": monthly_price})
+            # Customer response is unchanged apart from the new breakdown:
+            # the risk assessment is for the admin view only
+            self.send_json(200, {"monthly_price": monthly_price, "breakdown": breakdown})
         except Exception:
             self.send_json(500, {"error": "Internal server error."})
 
