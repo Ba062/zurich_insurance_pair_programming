@@ -66,6 +66,21 @@ test("validateYear", () => {
   assert.notStrictEqual(v.validateYear("2027", TODAY), "");
 });
 
+test("validateNoClaimsDiscount", () => {
+  assert.strictEqual(v.validateNoClaimsDiscount("0"), ""); // lower boundary
+  assert.strictEqual(v.validateNoClaimsDiscount("25"), "");
+  assert.strictEqual(v.validateNoClaimsDiscount("50"), ""); // upper boundary
+  assert.strictEqual(v.validateNoClaimsDiscount(" 10 "), ""); // trimmed
+  assert.notStrictEqual(v.validateNoClaimsDiscount("51"), ""); // above range
+  assert.notStrictEqual(v.validateNoClaimsDiscount("99"), "");
+  assert.notStrictEqual(v.validateNoClaimsDiscount("-1"), "");
+  assert.notStrictEqual(v.validateNoClaimsDiscount("1.5"), "");
+  assert.notStrictEqual(v.validateNoClaimsDiscount("abc"), "");
+  assert.notStrictEqual(v.validateNoClaimsDiscount("100"), "");
+  assert.notStrictEqual(v.validateNoClaimsDiscount(""), "");
+  assert.notStrictEqual(v.validateNoClaimsDiscount(undefined), "");
+});
+
 test("validateCoverageType", () => {
   assert.strictEqual(v.validateCoverageType("Standard"), "");
   assert.notStrictEqual(v.validateCoverageType("Gold"), "");
@@ -77,10 +92,20 @@ test("collectErrors drops empty messages", () => {
 });
 
 test("validateDriver", () => {
-  const good = { full_name: "Jane Doe", dob: "1990-05-20", email: "jane@example.com" };
+  const good = {
+    full_name: "Jane Doe",
+    dob: "1990-05-20",
+    email: "jane@example.com",
+    no_claims_discount: "20",
+  };
   assert.deepStrictEqual(v.validateDriver(good, TODAY), {});
   const errors = v.validateDriver({}, TODAY);
-  assert.deepStrictEqual(Object.keys(errors), ["full_name", "dob", "email"]);
+  assert.deepStrictEqual(Object.keys(errors), [
+    "full_name",
+    "dob",
+    "email",
+    "no_claims_discount",
+  ]);
 });
 
 test("validateCar", () => {
@@ -100,6 +125,7 @@ test("buildPayload keeps only known fields and makes year a number", () => {
     full_name: "Jane Doe",
     dob: "1990-05-20",
     email: "jane@example.com",
+    no_claims_discount: "25",
     car_make: "Toyota",
     car_model: "Corolla",
     car_year: "2019",
@@ -107,6 +133,7 @@ test("buildPayload keeps only known fields and makes year a number", () => {
     extra: "ignored",
   });
   assert.strictEqual(payload.car_year, 2019);
+  assert.strictEqual(payload.no_claims_discount, 25); // sent as a number
   assert.strictEqual("extra" in payload, false);
   assert.strictEqual(payload.coverage_type, "Standard");
 });

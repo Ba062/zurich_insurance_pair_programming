@@ -6,6 +6,8 @@ const QUOTE_RULES = Object.freeze({
   MIN_CAR_YEAR: 1980,
   MAX_NAME_LENGTH: 100,
   MAX_TEXT_LENGTH: 50,
+  MIN_NCD: 0, // no-claims discount, in percent
+  MAX_NCD: 50,
   COVERAGES: Object.freeze(["Basic", "Standard", "Premium"]),
 });
 
@@ -108,6 +110,17 @@ function validateYear(value, today) {
   return "";
 }
 
+function validateNoClaimsDiscount(value) {
+  if (isBlank(value)) return "No-claims discount is required.";
+  // Digits only, so "-5", "1.5" and "abc" are rejected before any number parsing
+  if (!/^\d{1,2}$/.test(value.trim())) return "Enter a whole number.";
+  const discount = Number(value);
+  if (discount < QUOTE_RULES.MIN_NCD || discount > QUOTE_RULES.MAX_NCD) {
+    return `Discount must be between ${QUOTE_RULES.MIN_NCD} and ${QUOTE_RULES.MAX_NCD}.`;
+  }
+  return "";
+}
+
 function validateCoverageType(value) {
   if (!QUOTE_RULES.COVERAGES.includes(value)) return "Choose a coverage plan.";
   return "";
@@ -128,6 +141,7 @@ function validateDriver(data, today) {
     full_name: validateName(data.full_name),
     dob: validateDob(data.dob, today),
     email: validateEmail(data.email),
+    no_claims_discount: validateNoClaimsDiscount(data.no_claims_discount),
   });
 }
 
@@ -149,6 +163,7 @@ function buildPayload(data) {
     full_name: data.full_name,
     dob: data.dob,
     email: data.email,
+    no_claims_discount: Number(data.no_claims_discount),
     car_make: data.car_make,
     car_model: data.car_model,
     car_year: Number(data.car_year),
@@ -204,6 +219,7 @@ if (typeof module !== "undefined") {
     validateEmail,
     validateRequiredText,
     validateYear,
+    validateNoClaimsDiscount,
     validateCoverageType,
     collectErrors,
     validateDriver,
