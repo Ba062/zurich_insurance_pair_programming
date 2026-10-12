@@ -20,7 +20,9 @@ The database file `backend/quotes.db` is created on first use and is not committ
 
 ## Try it
 
-Fill in the form with invented details, for example a driver born in 1996 with a 2018 Ford Fiesta and Standard cover. A 4 year no claims history gives 41.60 a month. A driver under 21, over 75, or a car more than 20 years old is referred for review instead of accepted, and the reason is shown.
+Fill in the form with invented details, for example a driver born in 1996 with a 2018 Ford Fiesta and Standard cover. Leave the no claims box at 0 and the price is 52.00 a month. A driver under 21, over 75, or a car more than 20 years old is referred for review instead of accepted, and the reason is shown at the admin address.
+
+The backend prices a no claims discount from a field called `no_claims_years`, but the form currently sends `no_claims_discount`, so the form's box does not change the price yet. The pricing tests cover the discount working.
 
 ## Run the tests
 
