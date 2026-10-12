@@ -104,7 +104,7 @@ function validateDriver(data, today) {
 
 function validateCar(data, today) {
   return collectErrors({
-    car_make: validateRequiredText("Make", data.car_make, QUOTE_RULES.MAX_TEXT_LENGTH),
+    car_make: validateRequiredText("Car Brand", data.car_make, QUOTE_RULES.MAX_TEXT_LENGTH),
     car_model: validateRequiredText("Model", data.car_model, QUOTE_RULES.MAX_TEXT_LENGTH),
     car_year: validateYear(data.car_year, today),
   });
