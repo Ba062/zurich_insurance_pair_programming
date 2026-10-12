@@ -32,6 +32,9 @@ const MARKET_PLANS = Object.freeze({
   }),
 });
 
+// Letters (any alphabet, with accents) in groups separated by one space, hyphen or apostrophe
+const NAME_RE = /^[\p{L}\p{M}]+(?:[ '’-][\p{L}\p{M}]+)*$/u;
+
 // True for anything that is not a string with visible characters
 function isBlank(value) {
   return typeof value !== "string" || value.trim() === "";
@@ -64,6 +67,9 @@ function calcAge(dob, today) {
 function validateName(value) {
   if (isBlank(value)) return "Full name is required.";
   if (value.trim().length > QUOTE_RULES.MAX_NAME_LENGTH) return "Name is too long.";
+  if (!NAME_RE.test(value.trim())) {
+    return "Name can only contain letters, spaces, hyphens and apostrophes.";
+  }
   return "";
 }
 

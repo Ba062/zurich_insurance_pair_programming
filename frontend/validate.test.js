@@ -22,8 +22,19 @@ test("calcAge", () => {
 
 test("validateName", () => {
   assert.strictEqual(v.validateName("Jane Doe"), "");
+  assert.strictEqual(v.validateName("  Jane Doe  "), ""); // trimmed before checking
+  assert.strictEqual(v.validateName("Anne-Marie O'Brien"), "");
+  assert.strictEqual(v.validateName("François Müller"), "");
   assert.notStrictEqual(v.validateName(""), "");
   assert.notStrictEqual(v.validateName("a".repeat(101)), "");
+  assert.strictEqual(v.validateName("a".repeat(100)), ""); // boundary
+  assert.notStrictEqual(v.validateName("Jane123"), ""); // digits
+  assert.notStrictEqual(v.validateName("Jane@Doe"), ""); // special characters
+  assert.notStrictEqual(v.validateName("<b>Jane</b>"), ""); // markup
+  assert.notStrictEqual(v.validateName("Jane  Doe"), ""); // doubled space
+  assert.notStrictEqual(v.validateName("-Jane"), ""); // leading separator
+  assert.notStrictEqual(v.validateName("Jane-"), ""); // trailing separator
+  assert.notStrictEqual(v.validateName("123"), "");
 });
 
 test("validateDob", () => {

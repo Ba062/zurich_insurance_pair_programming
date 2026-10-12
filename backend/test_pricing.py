@@ -5,7 +5,8 @@ from datetime import date
 
 import pytest
 
-from pricing import calculate_monthly_price
+from pricing import COVERAGE_FACTORS, calculate_monthly_price
+from validate import QUOTE_RULES
 
 TODAY = date(2024, 6, 15)
 
@@ -56,6 +57,14 @@ def test_calculate_monthly_price_premium_coverage():
 def test_calculate_monthly_price_unknown_coverage_raises():
     with pytest.raises(ValueError):
         calculate_monthly_price(base_payload(coverage_type="Gold"), TODAY)
+
+
+# --- coverage types stay in sync with validate.py ----------------------------
+
+def test_coverage_factors_match_validate_coverages():
+    # Guards against the two rule lists drifting apart: a coverage type
+    # accepted by validate_quote must have a price factor here, and vice versa
+    assert set(COVERAGE_FACTORS.keys()) == set(QUOTE_RULES["COVERAGES"])
 
 
 # --- age factor ----------------------------------------------------------------

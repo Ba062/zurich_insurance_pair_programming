@@ -28,13 +28,14 @@ MIME_TYPES = {
 }
 
 _connection = None
+_db_path = DB_PATH
 
 
 # One shared connection for the lifetime of the process (server is single-threaded)
 def get_connection():
     global _connection
     if _connection is None:
-        _connection = sqlite3.connect(DB_PATH, check_same_thread=False)
+        _connection = sqlite3.connect(_db_path, check_same_thread=False)
         init_db(_connection)
     return _connection
 
@@ -160,9 +161,20 @@ class QuoteRequestHandler(BaseHTTPRequestHandler):
         self.send_method_not_allowed()
 
 
-def run():
-    server = HTTPServer((HOST, PORT), QuoteRequestHandler)
-    print(f"Serving on http://{HOST}:{PORT}")
+# Builds and binds the HTTPServer without starting it, so callers (the
+# normal entry point, or tests) can control when/how it runs. Also points
+# get_connection() at the given db_path, resetting any cached connection
+# so a fresh one is opened against it.
+def make_server(host=HOST, port=PORT, db_path=DB_PATH):
+    global _db_path, _connection
+    _db_path = db_path
+    _connection = None
+    return HTTPServer((host, port), QuoteRequestHandler)
+
+
+def run(host=HOST, port=PORT, db_path=DB_PATH):
+    server = make_server(host, port, db_path)
+    print(f"Serving on http://{host}:{port}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

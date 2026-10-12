@@ -1,0 +1,2 @@
+python -m pytest backend
+node --test frontend
